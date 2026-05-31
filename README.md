@@ -92,7 +92,6 @@
 | 图片处理 | `intervention/image` | M5 图片上传 |
 | 调试工具 | `barryvdh/laravel-debugbar` | 开发阶段 |
 | IDE 辅助 | `barryvdh/laravel-ide-helper` | 开发阶段 |
-| 角色权限 | `spatie/laravel-permission` | M7 权限控制 |
 | SEO | `artesaos/seotools` | M8 SEO 优化 |
 | 后台管理 | `filament/filament` | 可选，作为后期升级 |
 
@@ -280,15 +279,28 @@ Post    *───*  Tag           (post_tag)
 Post    1───*  Comment
 Comment *───1  User
 Comment *───1  Post
+Link    独立表（无外键关联）
 ```
 
-### 6.3 ER 图
+### 6.3 数据库表清单
 
-后续用 dbdiagram.io 绘制并导出图片放到 `docs/er.png`，本文档引用：
+项目共 12 张表（精简后）：
 
-```
-（占位：M2 完成数据库迁移后补充 ER 图）
-```
+| 表名 | 用途 |
+|------|------|
+| users | 用户（含 role 字段区分 admin/author/user） |
+| posts | 文章 |
+| categories | 分类 |
+| tags | 标签 |
+| post_tag | 文章-标签多对多中间表 |
+| comments | 评论 |
+| links | 友链 |
+| cache / cache_locks | Laravel 缓存 |
+| sessions | 用户会话 |
+| password_reset_tokens | 密码重置令牌 |
+| migrations | 迁移记录 |
+
+> 注：已移除 spatie/permission 相关表（角色直接用 users.role 字段判断）和队列相关表（项目不使用队列）。
 
 ---
 
@@ -513,8 +525,8 @@ chore:    构建/工具变动
 
 ### M7 · 角色权限与后台（2~3 天）
 
-- [x] 引入 `spatie/laravel-permission`
-- [x] 定义 admin / author / user 角色
+- [x] ~~引入 `spatie/laravel-permission`~~（已移除，改用 users.role 字段）
+- [x] 定义 admin / author / user 角色（users.role enum 字段）
 - [x] Policy 定义 Post / Comment 的更新删除规则
 - [x] 后台管理路由、布局、CRUD 页面
 - [x] 评论审核（隐藏违规评论）
@@ -751,6 +763,7 @@ php artisan test
 - 2026-05-31 · M8 部分完成 · slug 自动生成、meta 标题描述
 - 2026-05-31 · M8 完成 · sitemap.xml、部署文档（Nginx配置/环境变量/问题排查）
 - 2026-05-31 · 加分项 · 暗色主题切换（Tailwind dark mode + Alpine.js + localStorage）
+- 2026-05-31 · 重构 · 移除 spatie/permission 和队列表，数据库从 20 张表精简到 12 张，角色判断统一用 users.role 字段
 
 ---
 
@@ -762,7 +775,6 @@ php artisan test
 - Breeze 脚手架：https://laravel.com/docs/11.x/starter-kits#laravel-breeze
 - Tailwind CSS：https://tailwindcss.com/docs
 - Alpine.js：https://alpinejs.dev
-- spatie/laravel-permission：https://spatie.be/docs/laravel-permission
 - Filament：https://filamentphp.com（后期升级后台时参考）
 - Conventional Commits：https://www.conventionalcommits.org
 - dbdiagram.io：https://dbdiagram.io（数据库 ER 图）
