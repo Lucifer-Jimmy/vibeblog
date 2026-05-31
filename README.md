@@ -187,7 +187,7 @@ npm run dev                # 前端资源热更新
 - [ ] 点赞 / 收藏
 - [ ] 评论楼中楼回复（数据库已预留 `parent_id`，前端展示在此阶段实现）
 - [ ] 邮件通知（评论提醒）
-- [ ] 暗色主题
+- [x] 暗色主题
 - [ ] 国际化（中英文切换）
 - [ ] API 接口（Sanctum + 给小程序/移动端用）
 
@@ -523,8 +523,8 @@ chore:    构建/工具变动
 
 - [x] slug 自动生成（Str::slug）
 - [x] meta 标题 / 描述
-- [ ] sitemap.xml
-- [ ] 部署文档完善
+- [x] sitemap.xml
+- [x] 部署文档完善
 - [ ] 答辩 PPT、演示数据
 
 ---
@@ -561,30 +561,142 @@ php artisan test
 ### 12.1 本地演示部署
 
 ```bash
-# 生产构建前端资源
+# 1. 确保 MySQL Docker 容器运行中
+docker ps | grep mysql
+
+# 2. 安装依赖
+composer install
+npm install
+
+# 3. 配置环境
+cp .env.example .env
+php artisan key:generate
+# 编辑 .env 设置数据库连接
+
+# 4. 初始化数据库
+php artisan migrate --seed
+php artisan storage:link
+
+# 5. 生产构建前端资源
 npm run build
 
-# 优化 Laravel
+# 6. 优化 Laravel
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# 启动
+# 7. 启动
 php artisan serve --host=0.0.0.0 --port=8000
 ```
 
-### 12.2 服务器部署（可选）
+### 12.2 服务器部署
 
-最低配置：1 核 1G，Nginx + PHP-FPM + MySQL。
+**最低配置**：1 核 1G，Nginx + PHP-FPM 8.3+ + MySQL 8.0。
 
-关键步骤：
-1. 上传代码 / git clone
-2. `composer install --no-dev --optimize-autoloader`
-3. `npm ci && npm run build`
-4. 配置 `.env`，`php artisan key:generate`
-5. `php artisan migrate --force`
-6. `chmod -R 775 storage bootstrap/cache`
-7. 配置 Nginx 指向 `public/` 目录
+**关键步骤**：
+
+```bash
+# 1. 克隆代码
+git clone <repo-url> /var/www/myblog
+cd /var/www/myblog
+
+# 2. 安装 PHP 依赖（生产模式）
+composer install --no-dev --optimize-autoloader
+
+# 3. 构建前端
+npm ci && npm run build
+
+# 4. 配置环境变量
+cp .env.example .env
+php artisan key:generate
+# 编辑 .env：设置 APP_ENV=production, APP_DEBUG=false, 数据库信息等
+
+# 5. 数据库迁移
+php artisan migrate --force
+
+# 6. 创建存储链接
+php artisan storage:link
+
+# 7. 优化缓存
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+
+# 8. 设置目录权限
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+```
+
+### 12.3 Nginx 配置示例
+
+```nginx
+server {
+    listen 80;
+    server_name myblog.example.com;
+    root /var/www/myblog/public;
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+
+    index index.php;
+    charset utf-8;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    error_page 404 /index.php;
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+
+    # 静态资源缓存
+    location /build/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+### 12.4 环境变量清单
+
+| 变量 | 说明 | 示例值 |
+|------|------|--------|
+| `APP_NAME` | 站点名称 | MyBlog |
+| `APP_ENV` | 环境 | production |
+| `APP_DEBUG` | 调试模式 | false |
+| `APP_URL` | 站点 URL | https://myblog.example.com |
+| `DB_HOST` | 数据库主机 | 127.0.0.1 |
+| `DB_PORT` | 数据库端口 | 3306 |
+| `DB_DATABASE` | 数据库名 | myblog |
+| `DB_USERNAME` | 数据库用户 | myblog_user |
+| `DB_PASSWORD` | 数据库密码 | (安全密码) |
+| `MAIL_MAILER` | 邮件驱动 | smtp |
+| `MAIL_HOST` | 邮件服务器 | smtp.example.com |
+
+### 12.5 常见问题排查
+
+| 问题 | 解决方案 |
+|------|----------|
+| 500 错误 | 检查 `storage/logs/laravel.log`，确认 `.env` 配置正确 |
+| CSS/JS 404 | 运行 `npm run build`，确认 `public/build/` 目录存在 |
+| 图片无法显示 | 运行 `php artisan storage:link` 创建符号链接 |
+| 权限错误 | `chmod -R 775 storage bootstrap/cache` |
+| 数据库连接失败 | 检查 `.env` 中 DB_* 配置，确认 MySQL 服务运行中 |
+| 路由 404 | 运行 `php artisan route:cache` 或检查 Nginx `try_files` 配置 |
+| 缓存问题 | `php artisan optimize:clear` 清除所有缓存 |
 
 可选 PaaS：Sevalla、Laravel Forge、Railway。
 
@@ -637,6 +749,8 @@ php artisan test
 - 2026-05-31 · M6 完成 · MySQL FULLTEXT 全文搜索、导航栏搜索框、搜索结果页
 - 2026-05-31 · M7 完成 · spatie/laravel-permission 角色权限、后台管理面板（仪表盘/文章/分类/评论审核）
 - 2026-05-31 · M8 部分完成 · slug 自动生成、meta 标题描述
+- 2026-05-31 · M8 完成 · sitemap.xml、部署文档（Nginx配置/环境变量/问题排查）
+- 2026-05-31 · 加分项 · 暗色主题切换（Tailwind dark mode + Alpine.js + localStorage）
 
 ---
 

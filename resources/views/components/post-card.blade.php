@@ -1,6 +1,6 @@
 @props(['post'])
 
-<article class="bg-white rounded-card border border-hairline overflow-hidden hover:shadow-md transition-shadow">
+<article class="bg-white dark:bg-gray-800 rounded-card border border-hairline dark:border-gray-700 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/30 transition-shadow">
     @if($post->cover)
         <a href="{{ route('posts.show', $post) }}">
             <img src="{{ asset('storage/' . $post->cover) }}" alt="{{ $post->title }}" class="w-full h-48 object-cover">
@@ -13,26 +13,26 @@
                     {{ $post->category->name }}
                 </a>
             @endif
-            <span class="text-xs text-steel">{{ $post->published_at->diffForHumans() }}</span>
+            <span class="text-xs text-steel dark:text-gray-400">{{ $post->published_at->diffForHumans() }}</span>
         </div>
 
-        <h2 class="text-lg font-semibold text-ink mb-2 line-clamp-2">
+        <h2 class="text-lg font-semibold text-ink dark:text-gray-100 mb-2 line-clamp-2">
             <a href="{{ route('posts.show', $post) }}" class="hover:text-primary transition">
                 {{ $post->title }}
             </a>
         </h2>
 
         @if($post->excerpt)
-            <p class="text-sm text-slate line-clamp-2 mb-4">{{ $post->excerpt }}</p>
+            <p class="text-sm text-slate dark:text-gray-400 line-clamp-2 mb-4">{{ $post->excerpt }}</p>
         @endif
 
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <span class="text-xs text-steel">{{ $post->user->name }}</span>
+                <span class="text-xs text-steel dark:text-gray-500">{{ $post->user->name }}</span>
             </div>
             <div class="flex items-center gap-1">
                 @foreach($post->tags->take(3) as $tag)
-                    <a href="{{ route('tags.show', $tag) }}" class="text-xs px-2 py-0.5 bg-surface rounded-full text-slate hover:text-primary transition">
+                    <a href="{{ route('tags.show', $tag) }}" class="text-xs px-2 py-0.5 bg-surface dark:bg-gray-700 rounded-full text-slate dark:text-gray-400 hover:text-primary transition">
                         #{{ $tag->name }}
                     </a>
                 @endforeach
