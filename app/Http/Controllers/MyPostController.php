@@ -40,10 +40,16 @@ class MyPostController extends Controller
             $data['published_at'] = now();
         }
 
+        // 处理封面图上传
+        if ($request->hasFile('cover')) {
+            $data['cover'] = $request->file('cover')->store('covers', 'public');
+        }
+
+        unset($data['tags']);
         $post = Post::create($data);
 
-        if (!empty($data['tags'])) {
-            $post->tags()->sync($data['tags']);
+        if (!empty($request->validated('tags'))) {
+            $post->tags()->sync($request->validated('tags'));
         }
 
         return redirect()->route('my.posts.index')->with('success', '文章创建成功');
@@ -71,11 +77,19 @@ class MyPostController extends Controller
             $data['published_at'] = now();
         }
 
-        $post->update($data);
-
-        if (isset($data['tags'])) {
-            $post->tags()->sync($data['tags']);
+        // 处理封面图上传
+        if ($request->hasFile('cover')) {
+            // 删除旧封面
+            if ($post->cover) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($post->cover);
+            }
+            $data['cover'] = $request->file('cover')->store('covers', 'public');
         }
+
+        $tags = $data['tags'] ?? [];
+        unset($data['tags']);
+        $post->update($data);
+        $post->tags()->sync($tags);
 
         return redirect()->route('my.posts.index')->with('success', '文章更新成功');
     }

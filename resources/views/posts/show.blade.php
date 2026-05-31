@@ -1,5 +1,6 @@
 <x-app-layout>
     <x-slot name="title">{{ $post->title }}</x-slot>
+    <x-slot name="metaDescription">{{ $post->excerpt ?: Str::limit(strip_tags($post->content), 160) }}</x-slot>
 
     <article class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <!-- Header -->

@@ -19,6 +19,7 @@ class StorePostRequest extends FormRequest
             'content' => 'required|string',
             'excerpt' => 'nullable|string|max:300',
             'status' => 'required|in:draft,published',
+            'cover' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
         ];

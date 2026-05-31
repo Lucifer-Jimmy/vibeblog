@@ -4,7 +4,7 @@
     <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <h1 class="text-2xl font-bold text-ink mb-6">写文章</h1>
 
-        <form action="{{ route('my.posts.store') }}" method="POST" class="space-y-6">
+        <form action="{{ route('my.posts.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
 
             <!-- Title -->
@@ -53,6 +53,16 @@
                         </label>
                     @endforeach
                 </div>
+            </div>
+
+            <!-- Cover Image -->
+            <div>
+                <label for="cover" class="block text-sm font-medium text-charcoal mb-1">封面图 (可选)</label>
+                <input type="file" name="cover" id="cover" accept="image/jpeg,image/png,image/webp"
+                    class="w-full text-sm text-slate file:mr-4 file:py-2 file:px-4 file:rounded-btn file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                @error('cover')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
             <!-- Excerpt -->

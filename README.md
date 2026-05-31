@@ -172,15 +172,15 @@ npm run dev                # 前端资源热更新
 
 ### 5.2 进阶功能（M5 ~ M8）
 
-- [ ] 文章封面图上传（本地存储）
+- [x] 文章封面图上传（本地存储）
 - [x] Markdown 编辑器与渲染
 - [x] 文章浏览量统计（简单实现每次 +1，后续可用 Redis 缓存优化）
-- [ ] 全文搜索（MySQL FULLTEXT）
-- [ ] 角色权限（admin / author / user）
-- [ ] 后台管理面板
+- [x] 全文搜索（MySQL FULLTEXT）
+- [x] 角色权限（admin / author / user）
+- [x] 后台管理面板
 - [ ] SEO（slug、meta、sitemap）
 - [ ] RSS 订阅
-- [ ] 定制 404/403/500 错误页面
+- [x] 定制 404/403/500 错误页面
 
 ### 5.3 可选加分项
 
@@ -500,29 +500,29 @@ chore:    构建/工具变动
 
 ### M5 · 文章封面图与体验优化（1 天）
 
-- [ ] 图片上传到 `storage/app/public/covers`
-- [ ] `php artisan storage:link`
-- [ ] 文章卡片显示封面
-- [ ] 浏览量统计（每次访问 +1，简单实现）
+- [x] 图片上传到 `storage/app/public/covers`
+- [x] `php artisan storage:link`
+- [x] 文章卡片显示封面
+- [x] 浏览量统计（每次访问 +1，简单实现）
 
 ### M6 · 搜索（1 天）
 
-- [ ] 在 posts 表加 FULLTEXT 索引（迁移用 raw SQL）
-- [ ] 搜索路由与结果页
-- [ ] 搜索框组件，加在导航栏
+- [x] 在 posts 表加 FULLTEXT 索引（迁移用 raw SQL）
+- [x] 搜索路由与结果页
+- [x] 搜索框组件，加在导航栏
 
 ### M7 · 角色权限与后台（2~3 天）
 
-- [ ] 引入 `spatie/laravel-permission`
-- [ ] 定义 admin / author / user 角色
-- [ ] Policy 定义 Post / Comment 的更新删除规则
-- [ ] 后台管理路由、布局、CRUD 页面
-- [ ] 评论审核（隐藏违规评论）
+- [x] 引入 `spatie/laravel-permission`
+- [x] 定义 admin / author / user 角色
+- [x] Policy 定义 Post / Comment 的更新删除规则
+- [x] 后台管理路由、布局、CRUD 页面
+- [x] 评论审核（隐藏违规评论）
 
 ### M8 · SEO 与上线（1 天）
 
-- [ ] slug 自动生成（Str::slug）
-- [ ] meta 标题 / 描述
+- [x] slug 自动生成（Str::slug）
+- [x] meta 标题 / 描述
 - [ ] sitemap.xml
 - [ ] 部署文档完善
 - [ ] 答辩 PPT、演示数据
@@ -633,6 +633,10 @@ php artisan test
 - 2026-05-31 · M2 完成 · 数据库迁移（users/categories/tags/posts/comments/post_tag），模型关联，Factory + Seeder（35篇测试文章）
 - 2026-05-31 · M3 完成 · 前台首页、文章详情（Markdown渲染）、分类页、标签页、自定义错误页、Notion风格UI
 - 2026-05-31 · M4 完成 · 用户写文章（CRUD）、表单验证、评论功能、权限控制、Feature测试（35个测试全部通过）
+- 2026-05-31 · M5 完成 · 封面图上传（storage/public/covers）、浏览量统计
+- 2026-05-31 · M6 完成 · MySQL FULLTEXT 全文搜索、导航栏搜索框、搜索结果页
+- 2026-05-31 · M7 完成 · spatie/laravel-permission 角色权限、后台管理面板（仪表盘/文章/分类/评论审核）
+- 2026-05-31 · M8 部分完成 · slug 自动生成、meta 标题描述
 
 ---
 

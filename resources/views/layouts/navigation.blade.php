@@ -22,6 +22,15 @@
 
             <!-- Right Side -->
             <div class="hidden sm:flex sm:items-center space-x-4">
+                <!-- Search -->
+                <form action="{{ route('search') }}" method="GET" class="relative">
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="搜索..."
+                        class="w-40 lg:w-56 pl-8 pr-3 py-1.5 text-sm rounded-full border-hairline bg-surface-soft focus:border-primary focus:ring-primary focus:bg-white transition">
+                    <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-steel" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </form>
+
                 @auth
                     <a href="{{ route('my.posts.create') }}" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-btn hover:bg-primary-pressed transition">
                         写文章
@@ -37,6 +46,9 @@
                         </x-slot>
                         <x-slot name="content">
                             <x-dropdown-link :href="route('my.posts.index')">我的文章</x-dropdown-link>
+                            @if(Auth::user()->isAdmin())
+                                <x-dropdown-link :href="route('admin.dashboard')">后台管理</x-dropdown-link>
+                            @endif
                             <x-dropdown-link :href="route('profile.edit')">个人设置</x-dropdown-link>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
