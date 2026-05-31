@@ -22,6 +22,19 @@
 /storage/pail
 /vendor
 _ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# 用户上传文件（开发环境产生，不提交）
+/storage/app/public/covers/*
+!/storage/app/public/covers/.gitkeep
+
+# SQLite 数据库文件（Laravel 默认创建）
+/database/database.sqlite
+
+# Debugbar 存储
+/storage/debugbar/*
+!/storage/debugbar/.gitignore
