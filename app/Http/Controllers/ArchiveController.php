@@ -11,9 +11,11 @@ class ArchiveController extends Controller
         $posts = Post::published()
             ->with('user')
             ->orderByDesc('published_at')
-            ->get()
-            ->groupBy(fn ($post) => $post->published_at->format('Y'));
+            ->paginate(30);
 
-        return view('archives.index', compact('posts'));
+        // 对当前页的数据按年份分组
+        $grouped = $posts->getCollection()->groupBy(fn ($post) => $post->published_at->format('Y'));
+
+        return view('archives.index', compact('posts', 'grouped'));
     }
 }

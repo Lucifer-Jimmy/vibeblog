@@ -55,6 +55,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/comments', [Admin\CommentController::class, 'index'])->name('comments.index');
     Route::patch('/comments/{comment}/toggle', [Admin\CommentController::class, 'toggleVisibility'])->name('comments.toggle');
     Route::delete('/comments/{comment}', [Admin\CommentController::class, 'destroy'])->name('comments.destroy');
+    Route::get('/links', [Admin\LinkController::class, 'index'])->name('links.index');
+    Route::post('/links', [Admin\LinkController::class, 'store'])->name('links.store');
+    Route::put('/links/{link}', [Admin\LinkController::class, 'update'])->name('links.update');
+    Route::delete('/links/{link}', [Admin\LinkController::class, 'destroy'])->name('links.destroy');
 });
 
 Route::get('/dashboard', function () {

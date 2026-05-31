@@ -30,6 +30,9 @@
                 <a href="{{ route('admin.comments.index') }}" class="flex items-center px-3 py-2 rounded-btn text-sm {{ request()->routeIs('admin.comments.*') ? 'bg-white/10 text-white' : 'text-stone hover:text-white hover:bg-white/5' }} transition">
                     评论审核
                 </a>
+                <a href="{{ route('admin.links.index') }}" class="flex items-center px-3 py-2 rounded-btn text-sm {{ request()->routeIs('admin.links.*') ? 'bg-white/10 text-white' : 'text-stone hover:text-white hover:bg-white/5' }} transition">
+                    友链管理
+                </a>
                 <hr class="border-white/10 my-4">
                 <a href="{{ route('home') }}" class="flex items-center px-3 py-2 rounded-btn text-sm text-stone hover:text-white hover:bg-white/5 transition">
                     ← 返回前台

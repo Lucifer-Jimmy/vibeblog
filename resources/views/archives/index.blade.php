@@ -4,7 +4,7 @@
     <div class="max-w-3xl mx-auto py-8 px-4 sm:px-6">
         <h1 class="text-2xl font-bold text-ink dark:text-gray-100 mb-8">归档</h1>
 
-        @forelse($posts as $year => $yearPosts)
+        @forelse($grouped as $year => $yearPosts)
             <section class="mb-10">
                 <h2 class="text-lg font-semibold text-primary mb-4">{{ $year }}</h2>
                 <ul class="space-y-3 border-l-2 border-hairline dark:border-gray-700 pl-6">
@@ -27,5 +27,10 @@
                 <p class="text-steel dark:text-gray-400">暂无文章</p>
             </div>
         @endforelse
+
+        <!-- Pagination -->
+        <div class="mt-8">
+            {{ $posts->links() }}
+        </div>
     </div>
 </x-app-layout>
