@@ -14,6 +14,7 @@
 6. [数据库初始化机制](#6-数据库初始化机制)
 7. [关键概念速查](#7-关键概念速查)
 8. [前端实现详解：为什么 Laravel 项目需要 NPM](#8-前端实现详解为什么-laravel-项目需要-npm)
+9. [单元测试与功能测试详解](#9-单元测试与功能测试详解)
 
 ---
 
@@ -970,4 +971,400 @@ resources/js/app.js  ───┘                          └── public/buil
 ```
 
 **记住：** 你永远不需要手动编辑 `public/build/` 下的文件。修改 `resources/` 下的源码，然后让 Vite 自动构建。
+
+---
+
+## 9. 单元测试与功能测试详解
+
+### 9.1 为什么要写测试？
+
+写测试的核心目标只有一个：**让你敢改代码。**
+
+没有测试时，你改了一个函数，不确定会不会影响其他地方，只能手动打开浏览器一个个页面点。有了测试，改完代码跑一遍 `php artisan test`，几秒钟就知道有没有搞坏东西。
+
+**测试的三个核心价值：**
+
+| 价值 | 说明 |
+|------|------|
+| 防止回归 | 修 Bug A 时不会引入 Bug B，因为 B 的测试会立刻报错 |
+| 文档作用 | 测试代码就是"活的文档"，描述了系统应该怎么工作 |
+| 设计驱动 | 写测试时会逼你思考接口设计，难测试的代码通常也是设计不好的代码 |
+
+### 9.2 单元测试 vs 功能测试
+
+Laravel 把测试分为两类，放在不同目录：
+
+```
+tests/
+├── Unit/       ← 单元测试：测试单个类/方法，不启动框架
+└── Feature/    ← 功能测试：模拟 HTTP 请求，测试完整流程
+```
+
+| 维度 | 单元测试（Unit） | 功能测试（Feature） |
+|------|-----------------|-------------------|
+| 测试范围 | 一个方法/一个类 | 一个完整的用户操作流程 |
+| 是否启动 Laravel | ❌ 不启动 | ✅ 启动完整框架 |
+| 是否访问数据库 | ❌ 通常不访问 | ✅ 使用测试数据库 |
+| 运行速度 | 极快（毫秒级） | 较慢（需要启动框架+数据库） |
+| 继承的基类 | `PHPUnit\Framework\TestCase` | `Tests\TestCase`（Laravel 的） |
+| 适合测试 | 工具函数、计算逻辑、数据转换 | 路由、权限、表单提交、业务流程 |
+
+**本项目的实际情况：** 主要写功能测试（Feature），因为博客系统的核心逻辑就是"用户通过 HTTP 请求操作数据"。
+
+### 9.3 测试的核心逻辑：Arrange → Act → Assert
+
+每个测试方法都遵循三步模式（也叫 AAA 模式）：
+
+```php
+public function test_user_can_create_post(): void
+{
+    // 1. Arrange（准备）— 构造测试所需的前置条件
+    $user = User::factory()->create();
+    $category = Category::factory()->create();
+
+    // 2. Act（执行）— 执行你要测试的操作
+    $response = $this->actingAs($user)->post('/my/posts', [
+        'title' => '测试文章标题',
+        'content' => '这是测试文章内容',
+        'category_id' => $category->id,
+        'status' => 'draft',
+    ]);
+
+    // 3. Assert（断言）— 验证结果是否符合预期
+    $response->assertRedirect(route('my.posts.index'));
+    $this->assertDatabaseHas('posts', [
+        'title' => '测试文章标题',
+        'user_id' => $user->id,
+    ]);
+}
+```
+
+**用大白话说：**
+1. **准备** — 创建假用户、假数据，搭好测试场景
+2. **执行** — 模拟用户的操作（发请求、调方法）
+3. **断言** — 检查结果对不对（页面状态码、数据库有没有写入、有没有报错）
+
+### 9.4 本项目的测试文件解析
+
+#### 文件结构
+
+```
+tests/
+├── TestCase.php                          ← 基类（所有 Feature 测试继承它）
+├── Unit/
+│   └── ExampleTest.php                   ← 示例单元测试
+└── Feature/
+    ├── ExampleTest.php                   ← 示例功能测试（首页返回 200）
+    ├── PostTest.php                      ← 文章相关测试（10 个测试）
+    ├── ProfileTest.php                   ← 个人资料测试（5 个测试）
+    └── Auth/
+        ├── AuthenticationTest.php        ← 登录/登出测试
+        ├── RegistrationTest.php          ← 注册测试
+        ├── PasswordConfirmationTest.php  ← 密码确认测试
+        ├── PasswordUpdateTest.php        ← 密码修改测试
+        ├── PasswordResetTest.php         ← 密码重置测试
+        └── EmailVerificationTest.php     ← 邮箱验证测试
+```
+
+#### PostTest.php 逐个解读
+
+这是本项目最有代表性的测试文件，覆盖了博客的核心业务逻辑：
+
+```php
+// 测试 1：游客能看到首页
+public function test_guest_can_view_homepage(): void
+{
+    Post::factory(3)->published()->create();  // 准备：创建 3 篇已发布文章
+    $response = $this->get('/');              // 执行：访问首页
+    $response->assertStatus(200);            // 断言：返回 200
+    $response->assertViewHas('posts');       // 断言：视图中有 $posts 变量
+}
+
+// 测试 2：游客能看到已发布的文章
+public function test_guest_can_view_published_post(): void
+{
+    $post = Post::factory()->published()->create();
+    $response = $this->get("/posts/{$post->slug}");
+    $response->assertStatus(200);
+    $response->assertSee($post->title);      // 断言：页面中包含文章标题
+}
+
+// 测试 3：游客看不到草稿文章（返回 404）
+public function test_guest_cannot_view_draft_post(): void
+{
+    $post = Post::factory()->draft()->create();
+    $response = $this->get("/posts/{$post->slug}");
+    $response->assertStatus(404);            // 断言：草稿返回 404
+}
+
+// 测试 4：游客不能访问创建文章页面（被重定向到登录）
+public function test_guest_cannot_access_create_post_page(): void
+{
+    $response = $this->get('/my/posts/create');
+    $response->assertRedirect('/login');      // 断言：重定向到登录页
+}
+
+// 测试 5：登录用户可以创建文章
+public function test_user_can_create_post(): void
+{
+    $user = User::factory()->create();
+    $category = Category::factory()->create();
+    $response = $this->actingAs($user)->post('/my/posts', [...]);
+    $response->assertRedirect(route('my.posts.index'));
+    $this->assertDatabaseHas('posts', ['title' => '...']);
+}
+
+// 测试 6：用户只能编辑自己的文章
+public function test_user_can_only_edit_own_post(): void
+{
+    $author = User::factory()->create();
+    $other = User::factory()->create();
+    $post = Post::factory()->create(['user_id' => $author->id]);
+
+    $this->actingAs($author)->get("/my/posts/{$post->id}/edit")
+         ->assertStatus(200);                // 作者可以编辑
+    $this->actingAs($other)->get("/my/posts/{$post->id}/edit")
+         ->assertStatus(403);                // 其他人返回 403 禁止
+}
+
+// 测试 7-8：评论权限
+// 游客不能评论（重定向登录），登录用户可以评论
+
+// 测试 9-10：分类页和标签页能正常显示文章
+```
+
+**这组测试覆盖了什么？**
+- ✅ 页面可访问性（200/404）
+- ✅ 认证保护（未登录重定向到 /login）
+- ✅ 授权保护（非作者返回 403）
+- ✅ 数据写入正确性（assertDatabaseHas）
+- ✅ 业务规则（草稿不可见、只能编辑自己的文章）
+
+### 9.5 关键测试工具和方法
+
+#### RefreshDatabase trait
+
+```php
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+class PostTest extends TestCase
+{
+    use RefreshDatabase;  // 每个测试方法执行前，自动重置数据库
+}
+```
+
+这个 trait 保证每个测试方法都在"干净"的数据库上运行，测试之间互不影响。
+
+#### Factory（工厂）— 快速创建测试数据
+
+```php
+// 创建一个用户（保存到数据库）
+$user = User::factory()->create();
+
+// 创建 3 篇已发布文章
+$posts = Post::factory(3)->published()->create();
+
+// 创建一篇草稿
+$draft = Post::factory()->draft()->create();
+
+// 创建文章并指定作者
+$post = Post::factory()->create(['user_id' => $author->id]);
+```
+
+`published()` 和 `draft()` 是 Factory 中定义的"状态"（state），用来快速切换数据的不同形态。
+
+#### actingAs — 模拟登录用户
+
+```php
+// 以 $user 身份发起请求（不需要真的走登录流程）
+$this->actingAs($user)->get('/my/posts');
+$this->actingAs($user)->post('/my/posts', [...]);
+```
+
+#### 常用断言方法
+
+```php
+// HTTP 状态码
+$response->assertStatus(200);          // 成功
+$response->assertStatus(403);          // 禁止访问
+$response->assertStatus(404);          // 未找到
+
+// 重定向
+$response->assertRedirect('/login');   // 断言重定向到指定 URL
+$response->assertRedirect(route('my.posts.index'));
+
+// 页面内容
+$response->assertSee('文章标题');       // 页面中包含指定文本
+$response->assertDontSee('草稿内容');   // 页面中不包含指定文本
+
+// 视图数据
+$response->assertViewHas('posts');     // 视图中有 $posts 变量
+$response->assertViewHas('posts', function ($posts) {
+    return $posts->count() === 3;      // 还可以验证变量的值
+});
+
+// 数据库
+$this->assertDatabaseHas('posts', [    // 数据库中存在匹配的记录
+    'title' => '测试文章',
+    'user_id' => 1,
+]);
+$this->assertDatabaseMissing('posts', [...]); // 数据库中不存在
+$this->assertDatabaseCount('posts', 5);       // 表中有 5 条记录
+
+// Session
+$response->assertSessionHasNoErrors();         // 没有验证错误
+$response->assertSessionHasErrors(['title']);   // 有指定字段的错误
+
+// 认证状态
+$this->assertGuest();                  // 当前是未登录状态
+$this->assertAuthenticated();          // 当前是已登录状态
+```
+
+### 9.6 测试的运行方式
+
+```bash
+# 运行所有测试
+php artisan test
+# 或
+composer test
+
+# 只运行某个文件
+php artisan test tests/Feature/PostTest.php
+
+# 只运行某个方法
+php artisan test --filter=test_user_can_create_post
+
+# 只运行 Unit 测试套件
+php artisan test --testsuite=Unit
+
+# 只运行 Feature 测试套件
+php artisan test --testsuite=Feature
+
+# 并行运行（加速）
+php artisan test --parallel
+
+# 遇到第一个失败就停止
+php artisan test --stop-on-failure
+```
+
+### 9.7 测试配置（phpunit.xml）
+
+```xml
+<php>
+    <env name="APP_ENV" value="testing"/>           <!-- 使用 testing 环境 -->
+    <env name="DB_DATABASE" value="myblog_test"/>   <!-- 使用独立的测试数据库 -->
+    <env name="BCRYPT_ROUNDS" value="4"/>           <!-- 降低加密轮次，加速测试 -->
+    <env name="CACHE_STORE" value="array"/>         <!-- 内存缓存，不写磁盘 -->
+    <env name="SESSION_DRIVER" value="array"/>      <!-- 内存 Session -->
+    <env name="MAIL_MAILER" value="array"/>         <!-- 不真的发邮件 -->
+    <env name="QUEUE_CONNECTION" value="sync"/>     <!-- 队列同步执行，不入队 -->
+</php>
+```
+
+**关键设计：**
+- 使用独立的 `myblog_test` 数据库，不会污染开发数据
+- 所有外部服务（缓存、Session、邮件、队列）都用内存驱动，测试不依赖外部基础设施
+- `BCRYPT_ROUNDS=4` 降低密码哈希轮次，因为测试中频繁创建用户，不需要生产级安全性
+
+### 9.8 如何写一个新测试（实战模板）
+
+假设你要测试"管理员可以删除任何文章"：
+
+```php
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Post;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+class AdminPostTest extends TestCase
+{
+    use RefreshDatabase;
+
+    // 测试前的准备工作（每个测试方法执行前都会调用）
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // 创建角色（因为 RefreshDatabase 每次都清空数据库）
+        Role::create(['name' => 'admin']);
+    }
+
+    public function test_admin_can_delete_any_post(): void
+    {
+        // Arrange
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $post = Post::factory()->published()->create();
+
+        // Act
+        $response = $this->actingAs($admin)->delete("/admin/posts/{$post->id}");
+
+        // Assert
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('posts', ['id' => $post->id]);
+    }
+
+    public function test_non_admin_cannot_delete_others_post(): void
+    {
+        // Arrange
+        $user = User::factory()->create();
+        $post = Post::factory()->create(); // 别人的文章
+
+        // Act
+        $response = $this->actingAs($user)->delete("/admin/posts/{$post->id}");
+
+        // Assert
+        $response->assertStatus(403);
+        $this->assertDatabaseHas('posts', ['id' => $post->id]); // 文章还在
+    }
+}
+```
+
+### 9.9 测试命名规范
+
+Laravel 社区的命名惯例：
+
+```php
+// 格式：test_[谁]_[能/不能]_[做什么]
+public function test_guest_can_view_homepage(): void
+public function test_guest_cannot_view_draft_post(): void
+public function test_user_can_create_post(): void
+public function test_user_can_only_edit_own_post(): void
+public function test_admin_can_delete_any_post(): void
+```
+
+好的测试名读起来就像一句话，描述了一条业务规则。
+
+### 9.10 测试思维：应该测什么？
+
+**优先测试的（高价值）：**
+- 权限控制 — 谁能访问什么（最容易出安全漏洞的地方）
+- 核心业务流程 — 创建文章、发表评论、用户注册
+- 边界条件 — 草稿不可见、只能编辑自己的文章
+- 数据完整性 — 创建后数据库中确实有正确的记录
+
+**不需要测试的：**
+- 框架本身的功能（Laravel 自己有测试）
+- 简单的 getter/setter
+- 纯 UI 展示（用浏览器测试工具更合适）
+
+**测试金字塔：**
+
+```
+        /\
+       /  \        E2E 测试（浏览器自动化，最慢，写少量）
+      /    \
+     /──────\
+    /        \     功能测试（HTTP 请求级别，本项目主力）
+   /          \
+  /────────────\
+ /              \  单元测试（纯逻辑，最快，有复杂计算时写）
+/________________\
+```
+
+本项目以功能测试为主，因为博客系统的核心就是"HTTP 请求 → 数据库操作 → 页面响应"，功能测试能最直接地验证这个链路。
 

@@ -59,6 +59,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/links', [Admin\LinkController::class, 'store'])->name('links.store');
     Route::put('/links/{link}', [Admin\LinkController::class, 'update'])->name('links.update');
     Route::delete('/links/{link}', [Admin\LinkController::class, 'destroy'])->name('links.destroy');
+    Route::get('/settings', [Admin\SettingController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [Admin\SettingController::class, 'update'])->name('settings.update');
 });
 
 Route::get('/dashboard', function () {

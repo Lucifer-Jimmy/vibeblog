@@ -76,7 +76,9 @@
                     </x-dropdown>
                 @else
                     <a href="{{ route('login') }}" class="text-sm font-medium text-charcoal dark:text-gray-300 hover:text-primary transition">登录</a>
-                    <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-btn hover:bg-primary-pressed transition">注册</a>
+                    @if(setting('registration_enabled', 'true') === 'true')
+                        <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-btn hover:bg-primary-pressed transition">注册</a>
+                    @endif
                 @endauth
             </div>
 
