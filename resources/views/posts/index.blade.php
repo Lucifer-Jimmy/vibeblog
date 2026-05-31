@@ -8,7 +8,7 @@
             <p class="text-stone dark:text-gray-400 text-lg h-7"
                x-data="typewriter()"
                x-init="start()"
-            ><span x-text="display"></span><span class="animate-pulse">|</span></p>
+            ><span x-text="display"></span><span class="animate-blink">|</span></p>
         </div>
 
         <!-- Posts List (single column) -->
