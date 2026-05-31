@@ -1,118 +1,85 @@
-# LEARNING.md · 数据库初始化机制说明
+# LEARNING.md · Laravel 项目学习指南
 
-## 问题：首次部署时，项目会自动初始化数据库吗？
-
-**不会自动初始化。** 需要手动执行命令。
-
-Laravel 的数据库初始化分为两步：
-1. **迁移（Migration）** — 创建表结构
-2. **填充（Seeding）** — 插入初始数据
+> 本文档以 myblog 项目为例，帮助你理解 Laravel 13（架构风格与 Laravel 11+ 一致）的目录结构和请求处理流程。
 
 ---
 
-## 首次部署需要执行的命令
+## 目录
 
-```bash
-# 第一步：创建数据库（MySQL 层面）
-mysql -uroot -p -e "CREATE DATABASE myblog DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# 第二步：运行迁移（创建所有表）
-php artisan migrate
-
-# 第三步（可选）：填充测试数据
-php artisan migrate --seed    # 迁移 + 填充一起执行
-# 或者
-php artisan db:seed           # 单独填充（表已存在时）
-```
-
-> 生产环境通常只执行 `php artisan migrate --force`（不带 `--seed`），因为不需要假数据。
+1. [目录结构总览](#1-目录结构总览)
+2. [各目录详细说明](#2-各目录详细说明)
+3. [请求生命周期（从浏览器到响应）](#3-请求生命周期从浏览器到响应)
+4. [框架启动加载流程](#4-框架启动加载流程)
+5. [MVC 架构在本项目中的体现](#5-mvc-架构在本项目中的体现)
+6. [数据库初始化机制](#6-数据库初始化机制)
+7. [关键概念速查](#7-关键概念速查)
 
 ---
 
-## 代码位置一览
-
-### 迁移文件（表结构定义）
-
-位置：`database/migrations/`
-
-| 文件 | 作用 |
-|------|------|
-| `0001_01_01_000000_create_users_table.php` | users、password_reset_tokens、sessions 表 |
-| `0001_01_01_000001_create_cache_table.php` | cache、cache_locks 表 |
-| `0001_01_01_000002_create_jobs_table.php` | jobs、job_batches、failed_jobs 表 |
-| `2026_05_31_042701_create_categories_table.php` | categories 表 |
-| `2026_05_31_042702_create_tags_table.php` | tags 表 |
-| `2026_05_31_042703_create_posts_table.php` | posts 表 |
-| `2026_05_31_042704_create_comments_table.php` | comments 表 |
-| `2026_05_31_042705_create_post_tag_table.php` | post_tag 多对多中间表 |
-| `2026_05_31_045529_add_fulltext_index_to_posts_table.php` | posts 表全文索引 |
-| `2026_05_31_045900_create_permission_tables.php` | spatie/permission 角色权限表 |
-
-迁移按文件名中的时间戳排序执行，保证外键依赖正确。
-
-### 数据填充文件
-
-位置：`database/seeders/`
-
-| 文件 | 作用 |
-|------|------|
-| `DatabaseSeeder.php` | **入口文件**，创建角色（admin/author/user）、管理员账号、普通用户，然后调用 PostSeeder |
-| `PostSeeder.php` | 创建 6 个分类、10 个标签、35 篇文章，并为已发布文章生成评论 |
-
-### 工厂文件（假数据生成规则）
-
-位置：`database/factories/`
-
-| 文件 | 作用 |
-|------|------|
-| `UserFactory.php` | 定义用户假数据的生成规则 |
-| `CategoryFactory.php` | 定义分类名称池（技术、生活、读书等） |
-| `TagFactory.php` | 定义标签名称池（Laravel、PHP、Vue.js 等） |
-| `PostFactory.php` | 定义文章假数据（标题、slug、Markdown 内容、状态等） |
-| `CommentFactory.php` | 定义评论假数据 |
-
----
-
-## 执行流程图
+## 1. 目录结构总览
 
 ```
-php artisan migrate --seed
-│
-├── 1. 读取 database/migrations/ 下所有迁移文件
-│   ├── 按时间戳排序
-│   ├── 逐个执行 up() 方法
-│   └── 在 migrations 表中记录已执行的迁移
-│
-└── 2. 执行 database/seeders/DatabaseSeeder.php 的 run()
-    ├── 创建 3 个角色 (admin, author, user)
-    ├── 创建管理员 admin@myblog.test (密码: password)
-    ├── 创建普通用户 user@myblog.test (密码: password)
-    ├── 创建 3 个额外测试用户
-    └── 调用 PostSeeder::run()
-        ├── 用 CategoryFactory 创建 6 个分类
-        ├── 用 TagFactory 创建 10 个标签
-        ├── 用 PostFactory 创建 35 篇文章
-        ├── 每篇文章随机关联 1~4 个标签
-        └── 已发布文章随机生成 1~3 条评论
+myblog/
+├── app/                    ← 应用核心代码（你写的业务逻辑都在这里）
+├── bootstrap/              ← 框架启动引导文件
+├── config/                 ← 所有配置文件
+├── database/               ← 数据库相关（迁移、填充、工厂）
+├── public/                 ← Web 入口 + 静态资源（唯一对外暴露的目录）
+├── resources/              ← 前端资源（视图模板、CSS、JS 源码）
+├── routes/                 ← 路由定义（URL → Controller 的映射）
+├── storage/                ← 框架生成的文件（日志、缓存、上传文件）
+├── tests/                  ← 自动化测试
+├── vendor/                 ← Composer 依赖（不要手动修改）
+├── node_modules/           ← NPM 依赖（不要手动修改）
+├── .env                    ← 环境变量（数据库密码等敏感信息）
+├── composer.json           ← PHP 依赖声明
+├── package.json            ← 前端依赖声明
+├── vite.config.js          ← Vite 前端构建配置
+└── artisan                 ← Laravel CLI 入口（php artisan xxx）
 ```
 
 ---
 
-## 开发环境 vs 生产环境的区别
+## 2. 各目录详细说明
 
-| 场景 | 命令 | 说明 |
-|------|------|------|
-| 首次开发 | `php artisan migrate --seed` | 建表 + 填充假数据 |
-| 开发中重置 | `php artisan migrate:fresh --seed` | 删除所有表重建 + 重新填充 |
-| 生产首次部署 | `php artisan migrate --force` | 只建表，不填充假数据 |
-| 生产后续更新 | `php artisan migrate --force` | 只执行新增的迁移 |
-| 自动化测试 | PHPUnit + `RefreshDatabase` trait | 每个测试自动迁移+回滚，使用 myblog_test 库 |
+### 2.1 `app/` — 应用核心代码
 
----
+这是你日常开发中最常修改的目录。
 
-## 关键概念
+```
+app/
+├── Http/
+│   ├── Controllers/        ← 控制器：处理请求、调用模型、返回视图
+│   │   ├── Admin/          ← 后台管理控制器
+│   │   ├── Auth/           ← 认证相关控制器（登录、注册等，Breeze 生成）
+│   │   ├── PostController.php      ← 前台文章展示
+│   │   ├── CategoryController.php  ← 前台分类展示
+│   │   ├── SearchController.php    ← 搜索功能
+│   │   └── ...
+│   ├── Middleware/          ← 中间件：请求的"过滤器"
+│   │   └── AdminMiddleware.php     ← 检查用户是否是管理员
+│   └── Requests/            ← 表单请求验证类
+│       ├── StorePostRequest.php    ← 创建文章时的验证规则
+│       └── UpdatePostRequest.php   ← 更新文章时的验证规则
+├── Models/                  ← Eloquent 模型：对应数据库表
+│   ├── User.php             ← 用户模型
+│   ├── Post.php             ← 文章模型
+│   ├── Category.php         ← 分类模型
+│   ├── Tag.php              ← 标签模型
+│   └── Comment.php          ← 评论模型
+├── Providers/               ← 服务提供者：框架启动时注册服务
+│   ├── AppServiceProvider.php      ← 应用级服务注册（目前为空）
+│   └── ViewServiceProvider.php     ← 向视图注入全局数据（导航栏分类）
+└── View/
+    └── Components/          ← 视图组件类（对应 Blade 布局组件）
+        ├── AppLayout.php    ← 前台布局
+        ├── AdminLayout.php  ← 后台布局
+        └── GuestLayout.php  ← 游客布局（登录/注册页）
+```
 
-- **Migration 是幂等的**：Laravel 在 `migrations` 表中记录已执行的迁移，不会重复执行
-- **Seeder 不是幂等的**：重复执行会插入重复数据，所以开发中用 `migrate:fresh --seed` 重置
-- **Factory 是 Seeder 的工具**：Factory 定义"怎么生成一条假数据"，Seeder 决定"生成多少条、怎么关联"
-- **`--force` 标志**：生产环境必须加此标志才能执行迁移（防止误操作）
+**核心概念：**
+- **Controller** = 接收请求 → 处理逻辑 → 返回响应
+- **Model** = 一张数据库表的 PHP 对象表示，负责数据的增删改查
+- **Middleware** = 请求到达 Controller 之前/之后的拦截器
+- **Provider** = 框架启动时执行的初始化代码
+

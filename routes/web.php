@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\LinkController;
 use App\Http\Controllers\MyPostController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
@@ -13,6 +15,9 @@ use Illuminate\Support\Facades\Route;
 
 // 前台路由
 Route::get('/', [PostController::class, 'index'])->name('home');
+Route::get('/archives', [ArchiveController::class, 'index'])->name('archives');
+Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/links', [LinkController::class, 'index'])->name('links');
 Route::get('/search', [SearchController::class, 'index'])->name('search');
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/posts/{post:slug}', [PostController::class, 'show'])->name('posts.show');

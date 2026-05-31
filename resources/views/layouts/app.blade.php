@@ -8,6 +8,13 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
+        {{-- 在 Alpine 初始化前同步设置 dark class，防止页面闪烁 --}}
+        <script>
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.documentElement.classList.add('dark');
+            }
+        </script>
+
         <title>{{ isset($title) ? $title . ' - ' : '' }}{{ config('app.name', 'MyBlog') }}</title>
         @isset($metaDescription)
             <meta name="description" content="{{ $metaDescription }}">

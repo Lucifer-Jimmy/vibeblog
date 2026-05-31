@@ -12,11 +12,15 @@
                     <a href="{{ route('home') }}" class="text-sm font-medium {{ request()->routeIs('home') ? 'text-primary' : 'text-charcoal dark:text-gray-300 hover:text-primary' }} transition">
                         首页
                     </a>
-                    @foreach($navCategories ?? [] as $cat)
-                        <a href="{{ route('categories.show', $cat) }}" class="text-sm font-medium {{ request()->is('categories/' . $cat->slug) ? 'text-primary' : 'text-charcoal dark:text-gray-300 hover:text-primary' }} transition">
-                            {{ $cat->name }}
-                        </a>
-                    @endforeach
+                    <a href="{{ route('archives') }}" class="text-sm font-medium {{ request()->routeIs('archives') ? 'text-primary' : 'text-charcoal dark:text-gray-300 hover:text-primary' }} transition">
+                        归档
+                    </a>
+                    <a href="{{ route('categories.index') }}" class="text-sm font-medium {{ request()->routeIs('categories.index') ? 'text-primary' : 'text-charcoal dark:text-gray-300 hover:text-primary' }} transition">
+                        分类
+                    </a>
+                    <a href="{{ route('links') }}" class="text-sm font-medium {{ request()->routeIs('links') ? 'text-primary' : 'text-charcoal dark:text-gray-300 hover:text-primary' }} transition">
+                        友链
+                    </a>
                 </div>
             </div>
 
@@ -101,9 +105,9 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1 px-4">
             <a href="{{ route('home') }}" class="block py-2 text-sm font-medium text-charcoal dark:text-gray-300">首页</a>
-            @foreach($navCategories ?? [] as $cat)
-                <a href="{{ route('categories.show', $cat) }}" class="block py-2 text-sm font-medium text-charcoal dark:text-gray-300">{{ $cat->name }}</a>
-            @endforeach
+            <a href="{{ route('archives') }}" class="block py-2 text-sm font-medium text-charcoal dark:text-gray-300">归档</a>
+            <a href="{{ route('categories.index') }}" class="block py-2 text-sm font-medium text-charcoal dark:text-gray-300">分类</a>
+            <a href="{{ route('links') }}" class="block py-2 text-sm font-medium text-charcoal dark:text-gray-300">友链</a>
         </div>
         @auth
             <div class="pt-4 pb-3 border-t border-hairline dark:border-gray-700 px-4">

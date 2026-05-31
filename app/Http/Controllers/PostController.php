@@ -13,7 +13,7 @@ class PostController extends Controller
         $posts = Post::published()
             ->with(['user', 'category', 'tags'])
             ->orderByDesc('published_at')
-            ->paginate(10);
+            ->paginate(5);
 
         return view('posts.index', compact('posts'));
     }
