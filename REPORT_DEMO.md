@@ -223,6 +223,8 @@ Post::factory(35)
 
 系统路由分为三组：
 
+
+
 ```php
 // 1. 前台公开路由（无需登录）
 Route::get('/', [PostController::class, 'index'])->name('home');
