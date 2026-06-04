@@ -1,0 +1,11 @@
+[mysqld]
+ngram_token_size=2                    # 中文全文
+innodb_ft_min_token_size=1
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+innodb_buffer_pool_size=256M          # 性能
+max_connections=50
+log_error=/var/log/mysql/error.log
+
+[client]
+default-character-set=utf8mb4

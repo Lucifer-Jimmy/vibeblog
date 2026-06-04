@@ -1,0 +1,31 @@
+services:
+  myblog:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: myblog
+    ports:
+      - "80:80" # 仅nginx
+    environment:
+      # ── 应用 ──
+      - APP_NAME=MyBlog
+      - APP_URL=http://localhost
+      # ── 管理员 ──
+      - ADMIN_NAME=Admin
+      - ADMIN_EMAIL=admin@myblog.test
+      - ADMIN_PASSWORD=admin123456 # 修改此项
+      # ── MySQL ──
+      - DB_DATABASE=myblog
+      - DB_USERNAME=myblog
+      - DB_PASSWORD=myblog_secret
+      - DB_ROOT_PASSWORD=root_secret
+    volumes:
+      - mysql_data:/var/lib/mysql       # 数据持久化
+      - storage_uploads:/var/www/myblog/storage/app/public
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+  storage_uploads:
+    driver: local

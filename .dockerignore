@@ -1,0 +1,30 @@
+# 不属于应用代码的文件（COPY src/ 不会复制这些）
+.git
+.gitignore
+.claude
+.idea
+.DS_Store
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+
+# Docker部署文件（docker/ 不排除，需单独 COPY 到系统路径）
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 文档和规范
+docs/
+spec/
+REPORT_DEMO.md
+
+# 测试
+phpunit.xml
+tests/
+
+# 开发工具
+_ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php
+.phpactor.json
