@@ -59,30 +59,30 @@
 
 | 类别 | 选型 | 版本 | 说明 |
 |---|---|---|---|
-| 语言 | PHP | 8.5+ | 严格类型、性能更好 |
+| 语言 | PHP | 8.4+ | Docker 镜像使用 PHP 8.4 |
 | 框架 | Laravel | 13.x | 最新稳定版 |
-| 数据库 | MySQL | 8.0+ | 支持 JSON、CTE、窗口函数 |
+| 数据库 | MySQL | 8.0+ | 支持 JSON、CTE、窗口函数；Docker 内置 ngram 中文全文搜索 |
 | 依赖管理 | Composer | 2.x | |
 | 认证脚手架 | Laravel Breeze | 最新 | Blade Stack |
-| 测试 | Pest / PHPUnit | 最新 | 优先用 Pest |
+| 测试 | PHPUnit | 12.x | 随 Laravel 13 附带 |
 
-### 前端（方案一：Blade + Tailwind + Alpine.js）
+### 前端（Blade + Tailwind + Alpine.js）
 
 | 类别 | 选型 | 说明 |
 |---|---|---|
 | 模板引擎 | Blade | Laravel 内置 |
 | 样式 | Tailwind CSS 3 | Breeze 自带 |
 | 交互 | Alpine.js | 轻量级，处理弹窗、下拉、切换等 |
-| 构建工具 | Vite | Laravel 11 默认 |
+| 构建工具 | Vite | Laravel 默认 |
 | 图标 | Heroicons / Lucide | 与 Tailwind 风格一致 |
-| 设计规范 | DESIGN.md | Notion 风格设计系统，详见项目根目录 `DESIGN.md` |
+| 设计规范 | DESIGN.md | Notion 风格设计系统，详见 `docs/DESIGN.md` |
 
-**前端设计说明**：本项目前端样式参照 `DESIGN.md` 中定义的 Notion 风格设计系统实现，包括：
+**前端设计说明**：本项目前端样式参照 `docs/DESIGN.md` 中定义的 Notion 风格设计系统实现，包括：
 - 色彩：以 `#5645d4`（紫色）为主色调，深海军蓝 `#0a1530` 用于 Hero 区域，搭配柔和的 pastel 卡片背景色
 - 字体：使用 Inter（Notion Sans 的开源替代）作为全站字体，遵循文档中的字号/字重层级
 - 圆角：按钮 8px、卡片 12px、徽章/标签 pill 形状，保持 Notion 的方正几何风格
 - 间距：基于 4px 基础单位的间距系统
-- 组件：按钮、卡片、输入框、标签等均遵循 `DESIGN.md` 中的 token 定义
+- 组件：按钮、卡片、输入框、标签等均遵循 `docs/DESIGN.md` 中的 token 定义
 
 ### 推荐生态包（按里程碑引入，不一次装完）
 
@@ -100,12 +100,12 @@
 ## 3. 环境要求
 
 - macOS / Linux / Windows（推荐 macOS + Laravel Herd）
-- PHP >= 8.3（实际使用 8.5）
+- PHP >= 8.3（实际使用 8.4）
 - Composer >= 2.5
-- Node.js >= 20 LTS（实际使用 26）
+- Node.js >= 20 LTS
 - MySQL >= 8.0（本项目使用 Docker 容器运行，端口 3306）
 - Git
-- Docker（用于运行 MySQL 服务）
+- Docker（用于运行 MySQL 服务，或使用 Docker Compose 一键部署）
 
 **推荐工具链**
 - Laravel Herd（一键搞定 PHP / Nginx / Node）
@@ -120,7 +120,7 @@
 ```bash
 # 1. 克隆项目
 git clone <repo-url> myblog
-cd myblog
+cd myblog/src
 
 # 2. 安装依赖
 composer install
@@ -155,6 +155,25 @@ npm run dev                # 前端资源热更新
 | 管理员 | admin@myblog.test | password |
 | 普通用户 | user@myblog.test | password |
 
+### Docker 部署（一键启动）
+
+```bash
+# 1. 克隆项目
+git clone <repo-url> myblog
+cd myblog
+
+# 2. 修改 docker-compose.yml 中的管理员密码和环境变量
+#    ADMIN_PASSWORD=admin123456  ← 务必修改
+#    DB_PASSWORD=myblog_secret   ← 务必修改
+
+# 3. 构建并启动容器
+docker compose up -d --build
+
+# 4. 访问 http://localhost
+```
+
+Docker 容器包含：Nginx + PHP 8.4 FPM + MySQL 8.0 + Supervisor，首次启动自动完成 MySQL 初始化、.env 生成、数据库迁移和管理员账号创建。数据通过 Docker named volumes 持久化。
+
 ---
 
 ## 5. 功能规划
@@ -177,7 +196,7 @@ npm run dev                # 前端资源热更新
 - [x] 全文搜索（MySQL FULLTEXT）
 - [x] 角色权限（admin / author / user）
 - [x] 后台管理面板
-- [ ] SEO（slug、meta、sitemap）
+- [x] SEO（slug、meta、sitemap）
 - [ ] RSS 订阅
 - [x] 定制 404/403/500 错误页面
 
@@ -189,6 +208,12 @@ npm run dev                # 前端资源热更新
 - [x] 暗色主题
 - [ ] 国际化（中英文切换）
 - [ ] API 接口（Sanctum + 给小程序/移动端用）
+- [x] 友链管理（前台展示 + 后台 CRUD）
+- [x] 注册开关（后台设置页控制）
+- [x] 文章归档页（按年份分组）
+- [x] 导航栏重构（首页 | 归档 | 分类 | 友链）
+- [x] Docker 单容器部署
+- [x] 首页打字机效果
 
 ---
 
@@ -269,6 +294,27 @@ npm run dev                # 前端资源热更新
 | status | enum('visible','hidden') | 默认 visible |
 | timestamps | | |
 
+**links**（友链）
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | bigint unsigned PK | |
+| name | varchar(50) | 友链名称 |
+| description | varchar(255) nullable | 简介 |
+| url | varchar(255) | 链接地址 |
+| avatar | varchar(255) nullable | 头像 URL |
+| status | enum('visible','hidden') | 默认 visible |
+| timestamps | | |
+
+**settings**（站点设置，KV 结构）
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| key | varchar(50) PK | 设置键名 |
+| value | text nullable | 设置值 |
+
+目前已使用的设置项：`registration_enabled`（注册开关，true/false）
+
 ### 6.2 模型关系
 
 ```
@@ -279,12 +325,13 @@ Post    *───*  Tag           (post_tag)
 Post    1───*  Comment
 Comment *───1  User
 Comment *───1  Post
-Link    独立表（无外键关联）
+Link    独立表（无外键关联，友链管理）
+Setting 独立表（KV 结构，站点设置）
 ```
 
 ### 6.3 数据库表清单
 
-项目共 12 张表（精简后）：
+项目共 10 张业务表 + 4 张框架表：
 
 | 表名 | 用途 |
 |------|------|
@@ -295,6 +342,7 @@ Link    独立表（无外键关联）
 | post_tag | 文章-标签多对多中间表 |
 | comments | 评论 |
 | links | 友链 |
+| settings | 站点设置（KV 结构，如 registration_enabled） |
 | cache / cache_locks | Laravel 缓存 |
 | sessions | 用户会话 |
 | password_reset_tokens | 密码重置令牌 |
@@ -306,49 +354,81 @@ Link    独立表（无外键关联）
 
 ## 7. 目录结构
 
-遵循 Laravel 默认结构，仅说明本项目重点目录：
+项目采用 `src/` 子目录结构，Laravel 应用代码位于 `src/` 内，Docker 部署配置位于项目根目录。仅说明本项目重点目录：
 
 ```
 myblog/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── PostController.php
-│   │   │   ├── CategoryController.php
-│   │   │   ├── TagController.php
-│   │   │   ├── CommentController.php
-│   │   │   └── Admin/              # M7 后台控制器
-│   │   ├── Requests/               # 表单验证类
-│   │   └── Middleware/
-│   ├── Models/
-│   │   ├── User.php
-│   │   ├── Post.php
-│   │   ├── Category.php
-│   │   ├── Tag.php
-│   │   └── Comment.php
-│   └── Policies/                   # M7 权限策略
-├── database/
-│   ├── migrations/
-│   ├── factories/
-│   └── seeders/
-├── resources/
-│   ├── views/
-│   │   ├── layouts/
-│   │   │   └── app.blade.php       # 主布局
-│   │   ├── components/             # Blade 组件
-│   │   ├── posts/
-│   │   ├── categories/
-│   │   ├── tags/
-│   │   └── auth/                   # Breeze 自带
-│   ├── css/app.css
-│   └── js/app.js
-├── routes/
-│   ├── web.php
-│   └── auth.php                    # Breeze 自带
-├── tests/
-│   ├── Feature/
-│   └── Unit/
-├── docs/                           # 项目文档（ER 图、答辩 PPT 等）
+├── src/                            ← Laravel 应用代码
+│   ├── app/
+│   │   ├── Http/
+│   │   │   ├── Controllers/
+│   │   │   │   ├── PostController.php
+│   │   │   │   ├── CategoryController.php
+│   │   │   │   ├── TagController.php
+│   │   │   │   ├── CommentController.php
+│   │   │   │   ├── ArchiveController.php      # 归档页
+│   │   │   │   ├── LinkController.php         # 友链页
+│   │   │   │   ├── SearchController.php       # 搜索
+│   │   │   │   ├── SitemapController.php      # Sitemap
+│   │   │   │   └── Admin/                     # 后台控制器
+│   │   │   │       ├── DashboardController.php
+│   │   │   │       ├── PostController.php
+│   │   │   │       ├── CategoryController.php
+│   │   │   │       ├── CommentController.php
+│   │   │   │       ├── LinkController.php
+│   │   │   │       └── SettingController.php  # 站点设置
+│   │   │   ├── Requests/               # 表单验证类
+│   │   │   └── Middleware/
+│   │   │       ├── AdminMiddleware.php
+│   │   │       └── RegistrationEnabled.php
+│   │   ├── Models/
+│   │   │   ├── User.php
+│   │   │   ├── Post.php
+│   │   │   ├── Category.php
+│   │   │   ├── Tag.php
+│   │   │   ├── Comment.php
+│   │   │   ├── Link.php              # 友链模型
+│   │   │   └── Setting.php           # 站点设置模型
+│   │   ├── Providers/
+│   │   ├── View/Components/
+│   │   └── helpers.php               # 全局辅助函数（setting()）
+│   ├── database/
+│   │   ├── migrations/
+│   │   ├── factories/
+│   │   └── seeders/
+│   ├── resources/
+│   │   ├── views/
+│   │   │   ├── layouts/
+│   │   │   │   └── app.blade.php       # 主布局
+│   │   │   ├── components/             # Blade 组件
+│   │   │   ├── posts/
+│   │   │   ├── categories/
+│   │   │   ├── tags/
+│   │   │   ├── archives/               # 归档页
+│   │   │   ├── links/                  # 友链页
+│   │   │   ├── search/                 # 搜索结果页
+│   │   │   ├── admin/                  # 后台视图
+│   │   │   └── auth/                   # Breeze 自带
+│   │   ├── css/app.css
+│   │   └── js/app.js
+│   ├── routes/
+│   │   ├── web.php
+│   │   └── auth.php                    # Breeze 自带
+│   └── tests/
+│       ├── Feature/
+│       └── Unit/
+├── docker/                         ← Docker 部署配置
+│   ├── nginx.conf                  # Nginx 配置
+│   ├── supervisord.conf            # 进程管理
+│   ├── mysql.cnf                   # MySQL 配置（ngram 中文全文搜索）
+│   └── entrypoint.sh              # 容器入口脚本
+├── docs/                           ← 项目文档
+│   ├── DESIGN.md                   # 前端设计规范
+│   └── LEARNING.md                 # Laravel 学习指南
+├── spec/                           ← 需求规格文档
+├── Dockerfile                      # Docker 镜像定义（Ubuntu 24.04 + PHP 8.4 + Nginx + MySQL）
+├── docker-compose.yml              # Docker Compose 一键部署
+├── REPORT_DEMO.md                  # 答辩报告
 └── README.md
 ```
 
@@ -361,11 +441,15 @@ myblog/
 | Method | URI | Controller@Action | 说明 |
 |---|---|---|---|
 | GET | `/` | `PostController@index` | 首页（文章列表） |
+| GET | `/archives` | `ArchiveController@index` | 文章归档（按年份分组） |
+| GET | `/categories` | `CategoryController@index` | 分类列表 |
+| GET | `/links` | `LinkController@index` | 友链列表 |
 | GET | `/posts/{post:slug}` | `PostController@show` | 文章详情 |
 | GET | `/categories/{category:slug}` | `CategoryController@show` | 分类下文章 |
 | GET | `/tags/{tag:slug}` | `TagController@show` | 标签下文章 |
 | POST | `/posts/{post}/comments` | `CommentController@store` | 发表评论（需登录） |
 | GET | `/search` | `SearchController@index` | 搜索结果（M6） |
+| GET | `/sitemap.xml` | `SitemapController@index` | Sitemap |
 
 ### 8.2 用户中心（登录后）
 
@@ -386,23 +470,26 @@ myblog/
 | `/admin` | 仪表盘 |
 | `/admin/posts` | 文章管理 |
 | `/admin/categories` | 分类管理 |
-| `/admin/tags` | 标签管理 |
 | `/admin/comments` | 评论审核 |
-| `/admin/users` | 用户管理 |
+| `/admin/links` | 友链管理 |
+| `/admin/settings` | 站点设置（注册开关等） |
 
 ### 8.4 页面布局概要
 
-> 所有页面样式遵循 `DESIGN.md` 设计规范，以下描述对应的设计 token。
+> 所有页面样式遵循 `docs/DESIGN.md` 设计规范，以下描述对应的设计 token。
 
 | 页面 | 布局描述 |
 |---|---|
-| 首页 | 顶部导航栏（白底 + 1px hairline 底边框，Logo + 分类链接 + 搜索框 `search-pill` + 登录/用户头像）；可选 Hero 区域（`hero-band-dark` 深海军蓝背景 + 紫色 CTA）；主体为文章卡片列表（`card-base` 样式，封面图 + 标题 + 摘要 + 分类标签 `badge-tag-*` + 发布时间），右侧可选侧边栏（热门文章 / 标签云）；底部 `footer-region` |
+| 首页 | 顶部导航栏（白底 + 1px hairline 底边框，Logo + 固定导航（首页 | 归档 | 分类 | 友链）+ 搜索框 `search-pill` + 登录/用户头像）；可选 Hero 区域（`hero-band-dark` 深海军蓝背景 + 打字机效果标语）；主体为单列居中文章卡片列表（`card-base` 样式，封面图 + 标题 + 摘要 + 分类标签 `badge-tag-*` + 发布时间），每页 5 篇；底部 `footer-region` |
 | 文章详情 | 标题（`heading-1`）+ 元信息（作者、时间、分类 `badge-tag-purple`、标签 `badge-tag-*`）→ 正文（`body-md`，Markdown 渲染）→ 评论区（`card-base` 卡片包裹） |
-| 分类/标签页 | 与首页类似的文章列表，顶部显示当前分类/标签名称（`heading-2`） |
+| 归档页 | 所有已发布文章按年份分组，每篇显示月-日 + 标题（可点击）+ 作者，按时间倒序 |
+| 分类页 | 所有分类列表（`card-base` 卡片），点击进入分类下文章 |
+| 友链页 | 友链卡片列表（名称 + 简介 + 跳转链接），分页展示 |
+| 分类/标签详情页 | 文章列表，顶部显示当前分类/标签名称（`heading-2`） |
 | 写文章 | 表单页：标题 `text-input`、分类下拉、标签多选、Markdown 编辑区、状态切换 `pill-tab`、提交 `button-primary` |
 | 后台 | 左侧菜单（深色背景）+ 右侧内容区的经典管理后台布局 |
 
-> 后续可补充线框图到 `docs/wireframes/` 目录。
+> 后续可补充线框图到 `docs/` 目录。
 
 ---
 
@@ -536,7 +623,7 @@ chore:    构建/工具变动
 - [x] slug 自动生成（Str::slug）
 - [x] meta 标题 / 描述
 - [x] sitemap.xml
-- [x] 部署文档完善
+- [x] 部署文档完善（Docker 单容器部署 + 传统部署）
 - [ ] 答辩 PPT、演示数据
 
 ---
@@ -562,21 +649,62 @@ chore:    构建/工具变动
 
 ```bash
 php artisan test
-# 或
-./vendor/bin/pest
 ```
 
 ---
 
 ## 12. 部署说明
 
-### 12.1 本地演示部署
+### 12.1 Docker Compose 部署（推荐）
+
+项目提供单容器 Docker 部署方案，容器内集成 Nginx + PHP 8.4 FPM + MySQL 8.0 + Supervisor。
+
+```bash
+# 1. 克隆项目
+git clone <repo-url> myblog
+cd myblog
+
+# 2. 修改 docker-compose.yml 中的环境变量
+#    ADMIN_PASSWORD=admin123456  ← 务必修改
+#    DB_PASSWORD=myblog_secret   ← 务必修改
+
+# 3. 构建并启动
+docker compose up -d --build
+
+# 4. 查看日志
+docker compose logs -f
+```
+
+**首次启动自动完成**：
+- MySQL 初始化（创建数据库、用户、授权）
+- `.env` 生成（基于 `.env.example`，自动替换环境变量）
+- `APP_KEY` 生成
+- 数据库迁移 + 管理员账号创建
+- 配置/路由/视图缓存
+- `storage:link` 创建
+
+**数据持久化**：
+- `mysql_data`：MySQL 数据目录
+- `storage_uploads`：用户上传文件（封面图等）
+
+**Docker 目录结构**：
+
+```
+docker/
+├── nginx.conf          # Nginx 站点配置
+├── supervisord.conf    # 进程管理（MySQL + PHP-FPM + Nginx）
+├── mysql.cnf           # MySQL 配置（ngram_token_size=2 支持中文全文搜索）
+└── entrypoint.sh       # 容器入口脚本
+```
+
+### 12.2 本地开发部署
 
 ```bash
 # 1. 确保 MySQL Docker 容器运行中
 docker ps | grep mysql
 
 # 2. 安装依赖
+cd src
 composer install
 npm install
 
@@ -601,9 +729,10 @@ php artisan view:cache
 php artisan serve --host=0.0.0.0 --port=8000
 ```
 
-### 12.2 服务器部署
+### 12.3 传统服务器部署
 
 **最低配置**：1 核 1G，Nginx + PHP-FPM 8.3+ + MySQL 8.0。
+**注意**：Laravel 应用代码位于 `src/` 子目录，部署时需将 Web 根目录指向 `src/public/`。
 
 **关键步骤**：
 
@@ -613,6 +742,7 @@ git clone <repo-url> /var/www/myblog
 cd /var/www/myblog
 
 # 2. 安装 PHP 依赖（生产模式）
+cd src
 composer install --no-dev --optimize-autoloader
 
 # 3. 构建前端
@@ -638,15 +768,16 @@ php artisan event:cache
 # 8. 设置目录权限
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
+cd ..
 ```
 
-### 12.3 Nginx 配置示例
+### 12.4 Nginx 配置示例
 
 ```nginx
 server {
     listen 80;
     server_name myblog.example.com;
-    root /var/www/myblog/public;
+    root /var/www/myblog/src/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
@@ -664,7 +795,7 @@ server {
     error_page 404 /index.php;
 
     location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
         fastcgi_hide_header X-Powered-By;
@@ -682,7 +813,7 @@ server {
 }
 ```
 
-### 12.4 环境变量清单
+### 12.5 环境变量清单
 
 | 变量 | 说明 | 示例值 |
 |------|------|--------|
@@ -697,8 +828,12 @@ server {
 | `DB_PASSWORD` | 数据库密码 | (安全密码) |
 | `MAIL_MAILER` | 邮件驱动 | smtp |
 | `MAIL_HOST` | 邮件服务器 | smtp.example.com |
+| `ADMIN_NAME` | 管理员名称（Docker） | Admin |
+| `ADMIN_EMAIL` | 管理员邮箱（Docker） | admin@myblog.test |
+| `ADMIN_PASSWORD` | 管理员密码（Docker） | admin123456 |
+| `DB_ROOT_PASSWORD` | MySQL root 密码（Docker） | root_secret |
 
-### 12.5 常见问题排查
+### 12.6 常见问题排查
 
 | 问题 | 解决方案 |
 |------|----------|
@@ -717,6 +852,9 @@ server {
 ## 13. 常用命令速查
 
 ```bash
+# 以下命令需在 src/ 目录下执行
+cd src
+
 # 创建模型 + 迁移 + 控制器 + 工厂 + Seeder
 php artisan make:model Post -mcfs --resource
 
@@ -744,6 +882,12 @@ php artisan route:list
 
 # 运行测试
 php artisan test
+
+# Docker 部署（在项目根目录执行）
+cd ..  # 回到项目根目录
+docker compose up -d --build
+docker compose logs -f
+docker compose down
 ```
 
 ---
@@ -764,12 +908,19 @@ php artisan test
 - 2026-05-31 · M8 完成 · sitemap.xml、部署文档（Nginx配置/环境变量/问题排查）
 - 2026-05-31 · 加分项 · 暗色主题切换（Tailwind dark mode + Alpine.js + localStorage）
 - 2026-05-31 · 重构 · 移除 spatie/permission 和队列表，数据库从 20 张表精简到 12 张，角色判断统一用 users.role 字段
+- 2026-06-01 · 新增 · 导航栏重构（首页 | 归档 | 分类 | 友链）、首页样式改为单列居中卡片、归档页（按年份分组）、友链页、打字机效果
+- 2026-06-01 · 新增 · 友链管理（前台展示 + 后台 CRUD）、注册开关（后台设置页）、修复暗色模式闪烁和页脚定位问题
+- 2026-06-02 · 新增 · 升级 Markdown 渲染为完整 GFM 支持
+- 2026-06-04 · 重构 · 重组项目目录结构，Laravel 应用代码移至 src/；新增 Docker 单容器部署（Nginx + PHP 8.4 FPM + MySQL + Supervisor）；新增 settings 表和 Link/Setting 模型；.env.example 增加 Docker 部署变量；删除冗余 docs/schema.sql
 
 ---
 
 ## 15. 参考资料
 
-- **DESIGN.md**：项目前端设计规范（Notion 风格设计系统，含色彩、字体、组件 token）
+- **docs/DESIGN.md**：项目前端设计规范（Notion 风格设计系统，含色彩、字体、组件 token）
+- **docs/LEARNING.md**：Laravel 项目学习指南（目录结构、请求生命周期、测试详解）
+- **REPORT_DEMO.md**：答辩报告
+- **spec/**：需求规格文档
 - Laravel 官方文档：https://laravel.com/docs/11.x
 - Laravel 中文文档：https://learnku.com/docs/laravel/11.x
 - Breeze 脚手架：https://laravel.com/docs/11.x/starter-kits#laravel-breeze
